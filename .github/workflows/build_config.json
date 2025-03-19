@@ -10,7 +10,7 @@
         "pylon_sdk_packaging": "8.1.0"
     },
     "windows": {
-        "targets": ["windows-2019", "windows-2022"],
+        "targets": ["windows-2019", "windows-2022", "windows-2025"],
         "pylon_sdks": ["7.5.0.15658", "8.1.0"],
         "pylon_sdk_packaging": "8.1.0"
     },
