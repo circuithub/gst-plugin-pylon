@@ -115,6 +115,8 @@ jobs:
       - name: install pylon
         run: |
           Start-Process .\pylon-installer\Basler-pylon-${{ matrix.pylon_sdk }}.exe -Wait -ArgumentList '/quiet /install=SDKs;Cpp_Runtime;CamEmu_Support'
+          echo $env:PYLON_DEV_DIR
+          echo $env:Path
 
       - name: install meson
         run: |
@@ -134,7 +136,8 @@ jobs:
       - name: compile
         run: |
           # access to pkg-config
-          $env:CMAKE_PREFIX_PATH = $env:PYLON_DEV_DIR + "\CMake\pylon\"
+          $env:PYLON_INSTALL_DIR = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Basler\pylon" -Name installationfolder).installationfolder
+          $env:CMAKE_PREFIX_PATH = $env:PYLON_INSTALL_DIR + "\Development\CMake\pylon\"
 
           meson setup build --prefix="$env:GSTREAMER_1_0_ROOT_MSVC_X86_64"
           ninja -C build
@@ -149,6 +152,8 @@ jobs:
       - name: test
         run: |
           $env:PYLON_CAMEMU="1"
+          $env:PYLON_INSTALL_DIR = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Basler\pylon" -Name installationfolder).installationfolder
+          $env:Path = $env:PYLON_INSTALL_DIR + "\Runtime\x64\;" + $env:Path
           gst-inspect-1.0.exe pylonsrc
           gst-launch-1.0.exe pylonsrc num-buffers=10 ! fakesink
 
