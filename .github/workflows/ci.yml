@@ -120,24 +120,11 @@ jobs:
         run: |
           pip install meson ninja
 
-      - name: Download Gstreamer
-        uses: suisei-cn/actions-download-file@v1
+      - name: Setup GStreamer
+        uses: marcpabst/setup-gstreamer@v.1.5.3
         with:
-          url:    https://gstreamer.freedesktop.org/data/pkg/windows/1.26.0/msvc/gstreamer-1.0-msvc-x86_64-1.26.0.msi
-          target: ${{ runner.temp }}\
-
-      - name: Download Gstreamer dev
-        uses: suisei-cn/actions-download-file@v1
-        with:
-          url:    https://gstreamer.freedesktop.org/data/pkg/windows/1.26.0/msvc/gstreamer-1.0-devel-msvc-x86_64-1.26.0.msi
-          target: ${{ runner.temp }}\
-
-      - name: Install Gstreamer
-        run:  |
-            cmd /c start /wait msiexec /package ${{ runner.temp }}\gstreamer-1.0-msvc-x86_64-1.26.0.msi TARGETDIR="C:\" /quiet ADDLOCAL=ALL /L*V gst.log
-            cmd /c start /wait msiexec /package ${{ runner.temp }}\gstreamer-1.0-devel-msvc-x86_64-1.26.0.msi TARGETDIR="C:\" /quiet ADDLOCAL=ALL /L*V dev.log
-            cat gst.log
-            cat dev.log
+            version: '1.26.0'
+            arch: 'x86_64'
 
       - name: Set up Visual Studio shell
         uses: egor-tensin/vs-shell@v2
@@ -147,11 +134,7 @@ jobs:
       - name: compile
         run: |
           # access to pkg-config
-          $env:GSTREAMER_1_0_ROOT_MSVC_X86_64 = "C:\gstreamer\1.0\msvc_x86_64"
-          $env:CMAKE_PREFIX_PATH = "C:\Program Files\Basler\pylon 7\Development\CMake\pylon\"
-          $env:Path = "$env:GSTREAMER_1_0_ROOT_MSVC_X86_64\bin;" + $env:Path
-          $env:PKG_CONFIG_PATH = "$env:GSTREAMER_1_0_ROOT_MSVC_X86_64\lib\pkgconfig"
-          $env:PKG_CONFIG = "$env:GSTREAMER_1_0_ROOT_MSVC_X86_64\bin\pkg-config"
+          $env:CMAKE_PREFIX_PATH = $env:PYLON_DEV_DIR + "\CMake\pylon\"
 
           meson setup build --prefix="$env:GSTREAMER_1_0_ROOT_MSVC_X86_64"
           ninja -C build
@@ -166,8 +149,6 @@ jobs:
       - name: test
         run: |
           $env:PYLON_CAMEMU="1"
-          $env:GSTREAMER_1_0_ROOT_MSVC_X86_64 = "C:\gstreamer\1.0\msvc_x86_64\"
-          $env:Path = "C:\Program Files\Basler\pylon 7\Runtime\x64\;$env:GSTREAMER_1_0_ROOT_MSVC_X86_64\bin;" + $env:Path
           gst-inspect-1.0.exe pylonsrc
           gst-launch-1.0.exe pylonsrc num-buffers=10 ! fakesink
 
