@@ -232,46 +232,53 @@ GstPylon *gst_pylon_new(GstElement *gstpylonsrc, const gchar *device_user_name,
       filter[0].SetSerialNumber(device_serial_number);
     }
 
-    factory.EnumerateDevices(device_list, filter);
+    bool open_direct =
+        (device_user_name || device_serial_number) && (-1 == device_index);
 
-    gint n_devices = device_list.size();
-    if (0 == n_devices) {
-      throw Pylon::GenericException(
-          "No devices found matching the specified criteria", __FILE__,
-          __LINE__);
-    }
+    if (!open_direct) {
+      factory.EnumerateDevices(device_list, filter);
 
-    if (n_devices > 1 && -1 == device_index) {
-      std::string msg =
-          "At least " + std::to_string(n_devices) +
-          " devices match the specified criteria, use "
-          "\"device-index\", \"device-serial-number\" or \"device-user-name\""
-          " to select one from the following list:\n";
-
-      for (gint i = 0; i < n_devices; i++) {
-        msg += "[" + std::to_string(i) +
-               "]: " + std::string(device_list.at(i).GetSerialNumber()) + "\t" +
-               std::string(device_list.at(i).GetModelName()) + "\t" +
-               std::string(device_list.at(i).GetUserDefinedName()) + "\n";
+      gint n_devices = device_list.size();
+      if (0 == n_devices) {
+        throw Pylon::GenericException(
+            "No devices found matching the specified criteria", __FILE__,
+            __LINE__);
       }
-      throw Pylon::GenericException(msg.c_str(), __FILE__, __LINE__);
-    }
 
-    if (device_index >= n_devices) {
-      std::string msg = "Device index " + std::to_string(device_index) +
-                        " exceeds the " + std::to_string(n_devices) +
-                        " devices found to match the given criteria";
-      throw Pylon::GenericException(msg.c_str(), __FILE__, __LINE__);
-    }
+      if (n_devices > 1 && -1 == device_index) {
+        std::string msg =
+            "At least " + std::to_string(n_devices) +
+            " devices match the specified criteria, use "
+            "\"device-index\", \"device-serial-number\" or \"device-user-name\""
+            " to select one from the following list:\n";
 
-    /* Only one device was found, we don't require the user specifying an
-     * index
-     * and if they did, we already checked for out-of-range errors above */
-    if (1 == n_devices) {
-      device_index = 0;
-    }
+        for (gint i = 0; i < n_devices; i++) {
+          msg += "[" + std::to_string(i) +
+                 "]: " + std::string(device_list.at(i).GetSerialNumber()) +
+                 "\t" + std::string(device_list.at(i).GetModelName()) + "\t" +
+                 std::string(device_list.at(i).GetUserDefinedName()) + "\n";
+        }
+        throw Pylon::GenericException(msg.c_str(), __FILE__, __LINE__);
+      }
 
-    device_info = device_list.at(device_index);
+      if (device_index >= n_devices) {
+        std::string msg = "Device index " + std::to_string(device_index) +
+                          " exceeds the " + std::to_string(n_devices) +
+                          " devices found to match the given criteria";
+        throw Pylon::GenericException(msg.c_str(), __FILE__, __LINE__);
+      }
+
+      /* Only one device was found, we don't require the user specifying an
+       * index and if they did, we already checked for out-of-range errors
+       * above */
+      if (1 == n_devices) {
+        device_index = 0;
+      }
+
+      device_info = device_list.at(device_index);
+    } else {
+      device_info = filter[0];
+    }
 
     /* retry loop to start camera
      * handles the cornercase of multiprocess pipelines started
