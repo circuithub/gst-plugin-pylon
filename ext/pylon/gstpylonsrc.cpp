@@ -332,8 +332,13 @@ static void gst_pylon_src_class_init(GstPylonSrcClass *klass) {
                                    GST_PARAM_MUTABLE_READY)));
 #endif
 
-  cam_params = gst_pylon_camera_get_string_properties();
-  stream_params = gst_pylon_stream_grabber_get_string_properties();
+  // These cause plyonsrc to connect to *all* cameras. This wrecks havoc when multiple GStreamer
+  // pipelines launch at the same time. AFAICT, all this really does is help provide introspection
+  // which we can live without, so we just skip this entirely. It does mean the plugin might say
+  // "No valid cameras where [sic] found", but this is harmless and doesn't stop anything else.
+  // 
+  // cam_params = gst_pylon_camera_get_string_properties();
+  // stream_params = gst_pylon_stream_grabber_get_string_properties();
 
   if (NULL == cam_params) {
     cam_prolog = "No valid cameras where found connected to the system.";
